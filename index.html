@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FutBat</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PronosTips</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
 :root{--bg:#0b1020;--p:#121a2e;--line:#293650;--muted:#94a3bd;--txt:#edf3ff;--green:#35d49a;--blue:#6da8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#1a2b4c,transparent 35%),var(--bg);color:var(--txt);font:15px system-ui}button,input,select{font:inherit;border-radius:9px;padding:10px;border:1px solid var(--line)}button{background:var(--blue);color:#071326;font-weight:700;cursor:pointer}input,select{background:#0c1426;color:var(--txt);width:100%}.wrap{max-width:1200px;margin:auto;padding:24px}.card{background:var(--p);border:1px solid var(--line);border-radius:15px;padding:18px;margin:14px 0}.login{max-width:420px;margin:10vh auto}.hidden{display:none}.brand{font-size:25px;font-weight:900}.brand span{color:var(--green)}.muted{color:var(--muted)}.tabs{display:flex;gap:8px;margin:20px 0;flex-wrap:wrap}.tabs button{background:#1b2942;color:#dce7fa}.tabs button.active{background:var(--green);color:#061a16}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat strong{display:block;font-size:24px;margin-top:8px}.stat small{color:var(--muted)}.bar{height:9px;background:#293650;border-radius:20px;overflow:hidden}.bar div{height:100%;background:var(--green)}.head{display:flex;justify-content:space-between;align-items:center;gap:12px}.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:700px}td,th{text-align:left;padding:11px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted)}.secondary{background:#25334d;color:white}.green{color:var(--green)}@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}}
 
 .next-step{background:#fff4d8;color:#704b00;border-color:#f4dfaa;padding:13px 18px}
@@ -265,7 +265,7 @@ table.ladder{min-width:1120px}
 
 </style></head><body>
 <div id="login" class="wrap login card"><div class="brand">FUT<span>BAT</span></div><p class="muted">Panel privado de escaleras y picks</p><h2>Iniciar sesión</h2><form id="loginForm"><label>Correo</label><input id="email" type="email" required><br><br><label>Contraseña</label><input id="password" type="password" required><br><br><button style="width:100%">Entrar</button></form><p id="error" class="muted"></p><small class="muted">Acceso privado. No hay registro público.</small></div>
-<div id="app" class="wrap hidden"><header class="head"><div><div class="brand">FUT<span>BAT</span></div><div class="muted">CONTROL CENTER · ESCALERAS DEPORTIVAS</div></div><button class="secondary" id="logout">Salir</button></header><nav class="tabs"><button class="active" data-tab="stonicx7">Escalera</button><button data-tab="eajoya7">Goal</button><button data-tab="picks">Picks</button></nav><main id="view"></main><div id="notice" class="notice hidden"></div></div>
+<div id="app" class="wrap hidden"><header class="head"><div><div class="brand">PRONOS<span>TIPS</span></div><div class="muted">CONTROL CENTER · PRONÓSTICOS DEPORTIVOS</div></div><button class="secondary" id="logout">Salir</button></header><nav class="tabs"><button class="active" data-tab="stonicx7">Escalera</button><button data-tab="eajoya7">Goal</button><button data-tab="picks">Picks</button></nav><main id="view"></main><div id="notice" class="notice hidden"></div></div>
 <script>
 const db=supabase.createClient("https://towrwojvnrjdsdvcfhtb.supabase.co","sb_publishable_XG6yddyUctVXITs7nClojQ_JfuZozPW");
 let user, ladders={}, steps=[], picks=[], dailyPicks=[], dailyHistory=[], tab="stonicx7";
@@ -282,7 +282,7 @@ document.querySelector("#loginForm").onsubmit=async e=>{
  const errorBox=document.querySelector("#error");
  const submit=e.currentTarget.querySelector('button[type="submit"],button:not([type])');
  if(submit){submit.disabled=true;submit.textContent="Ingresando..."}
- errorBox.textContent="Conectando con FutBat...";
+ errorBox.textContent="Conectando con PronosTips...";
  try{
   const {data,error}=await db.auth.signInWithPassword({email:document.querySelector("#email").value.trim(),password:document.querySelector("#password").value});
   if(error){errorBox.textContent="No se pudo iniciar sesión: "+error.message;return}
@@ -290,7 +290,7 @@ document.querySelector("#loginForm").onsubmit=async e=>{
   await boot();
  }catch(err){
   console.error("Error de inicio de sesión o carga:",err);
-  errorBox.textContent="Error al conectar o cargar FutBat: "+(err?.message||"Error desconocido");
+  errorBox.textContent="Error al conectar o cargar PronosTips: "+(err?.message||"Error desconocido");
  }finally{
   if(submit){submit.disabled=false;submit.textContent="Entrar"}
  }
