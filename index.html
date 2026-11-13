@@ -1,0 +1,513 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FutBat</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>
+:root{--bg:#0b1020;--p:#121a2e;--line:#293650;--muted:#94a3bd;--txt:#edf3ff;--green:#35d49a;--blue:#6da8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#1a2b4c,transparent 35%),var(--bg);color:var(--txt);font:15px system-ui}button,input,select{font:inherit;border-radius:9px;padding:10px;border:1px solid var(--line)}button{background:var(--blue);color:#071326;font-weight:700;cursor:pointer}input,select{background:#0c1426;color:var(--txt);width:100%}.wrap{max-width:1200px;margin:auto;padding:24px}.card{background:var(--p);border:1px solid var(--line);border-radius:15px;padding:18px;margin:14px 0}.login{max-width:420px;margin:10vh auto}.hidden{display:none}.brand{font-size:25px;font-weight:900}.brand span{color:var(--green)}.muted{color:var(--muted)}.tabs{display:flex;gap:8px;margin:20px 0;flex-wrap:wrap}.tabs button{background:#1b2942;color:#dce7fa}.tabs button.active{background:var(--green);color:#061a16}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat strong{display:block;font-size:24px;margin-top:8px}.stat small{color:var(--muted)}.bar{height:9px;background:#293650;border-radius:20px;overflow:hidden}.bar div{height:100%;background:var(--green)}.head{display:flex;justify-content:space-between;align-items:center;gap:12px}.table{overflow:auto}table{width:100%;border-collapse:collapse;min-width:700px}td,th{text-align:left;padding:11px;border-bottom:1px solid var(--line)}th{font-size:12px;color:var(--muted)}.secondary{background:#25334d;color:white}.green{color:var(--green)}@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.wrap{padding:14px}}
+
+.next-step{background:#fff4d8;color:#704b00;border-color:#f4dfaa;padding:13px 18px}
+.next-step p{margin:6px 0 0;color:#8b6a2c}
+.ladder-table{overflow-x:auto}
+table.ladder{min-width:1120px}
+.ladder td{padding:7px 6px;vertical-align:middle}
+.ladder td input{padding:8px;font-size:13px;min-width:110px;background:#edf2f5;color:#102033;border-color:#d6e0e8}
+.ladder td input[type=date]{min-width:128px}
+.ladder td input.short{min-width:72px;width:72px}
+.ladder td:nth-child(6) input{min-width:180px}
+.ladder td:nth-child(7) input{min-width:170px}
+.ladder .money{white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
+.ladder tr.row-won{background:rgba(53,212,154,.10)}
+.ladder tr.row-lost{background:rgba(239,100,100,.10)}
+.result-actions{display:flex;gap:5px;white-space:nowrap}
+.result-actions button{padding:7px 9px;font-size:12px}
+.result-actions .btn-won{background:#19a875;color:white;border-color:#19a875}
+.result-actions .btn-lost{background:#d9534f;color:white;border-color:#d9534f}
+.result-actions .btn-pending{background:#e4b84c;color:#302300;border-color:#e4b84c}
+.notice{position:fixed;right:20px;bottom:20px;background:#1b2942;border:1px solid #35d49a;color:#edf3ff;padding:12px 18px;border-radius:10px;z-index:20}
+@media(max-width:700px){.next-step{font-size:14px}.ladder-table{margin:0 -8px}.ladder td{padding:6px 4px}}
+
+.pick-card{background:linear-gradient(135deg,#14243b,#111a2d 65%);border:1px solid #35d49a;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.pick-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.pick-tag{display:inline-block;padding:5px 10px;border-radius:20px;background:rgba(53,212,154,.14);color:var(--green);font-size:12px;font-weight:800}
+.pick-match{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;text-align:center;margin:20px 0}
+.pick-team{font-size:18px;font-weight:800}.pick-vs{padding:7px 12px;background:#25334d;border-radius:10px;font-weight:900}
+.pick-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.pick-detail{background:rgba(7,19,38,.55);border:1px solid var(--line);border-radius:10px;padding:11px}
+.pick-detail small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;margin-bottom:4px}
+.pick-market{font-size:20px;font-weight:850;color:#fff}
+.pick-analysis{border-top:1px solid var(--line);padding-top:13px;margin-top:12px;line-height:1.55}
+.pick-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:13px;color:var(--muted);font-size:12px}
+@media(max-width:600px){.pick-details{grid-template-columns:1fr 1fr}.pick-team{font-size:15px}.pick-market{font-size:17px}}
+
+/* Picks del día: lista cronológica compacta */
+.picks-summary{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}
+.picks-summary h2{margin:0 0 4px;font-size:20px}
+.picks-summary p{margin:0;font-size:12px}
+.picks-summary-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.picks-pill{border:1px solid var(--line);background:#0c1729;padding:8px 11px;border-radius:10px;font-size:12px;color:#dbe8ff}
+.picks-list{display:flex;flex-direction:column;gap:8px}
+.pick-row{background:linear-gradient(110deg,#101c30,#0d1728);border:1px solid #293b56;border-radius:13px;padding:10px 12px;transition:border-color .15s}
+.pick-row.open{border-color:var(--green);background:linear-gradient(110deg,rgba(13,75,62,.28),#0d1728)}
+.pick-row-main{display:grid;grid-template-columns:82px minmax(105px,1fr) minmax(220px,2.2fr) minmax(150px,1.2fr) 64px 104px;align-items:center;gap:10px}
+.pick-time{font-weight:800;font-size:14px;white-space:nowrap;color:#eaf2ff;border-right:1px solid var(--line);padding-right:10px}
+.pick-league{font-size:11px;color:var(--muted);line-height:1.3}
+.pick-teams{display:flex;align-items:center;justify-content:center;gap:9px;min-width:0}
+.pick-side{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;font-size:13px;font-weight:750;text-align:center}
+.pick-side span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-crest{width:27px;height:27px;min-width:27px;border-radius:50%;display:grid;place-items:center;background:#203451;border:1px solid #49617e;color:#fff;font-size:9px;font-weight:900}
+.pick-vs-small{font-size:10px;color:#a9bdd9;background:#1b2b43;border:1px solid #344966;border-radius:7px;padding:4px 6px}
+.pick-market-line{font-size:12px;color:#dce8f8;line-height:1.35}
+.pick-confidence{display:inline-block;margin-left:7px;padding:3px 6px;border-radius:7px;border:1px solid rgba(53,212,154,.35);color:#71dfb4;font-size:10px;font-weight:700;white-space:nowrap}
+.confidence-mediabaja{border-color:rgba(230,200,121,.4);color:#e6c879}
+.confidence-media{border-color:rgba(53,212,154,.35);color:#71dfb4}
+
+.pick-odds{font-size:13px;font-weight:800;text-align:center;border:1px solid #344966;background:#101e32;border-radius:8px;padding:7px 5px}
+.pick-analysis-btn{background:transparent;border:1px solid var(--green);color:#5be5b1;padding:7px 8px;font-size:11px;white-space:nowrap}
+.pick-analysis-btn:hover{background:rgba(53,212,154,.12)}
+
+.pick-statistics{margin:10px 0 12px;padding:10px 12px;background:rgba(5,14,27,.42);border:1px solid #263b54;border-radius:10px}
+.pick-statistics h4{margin:0 0 9px;color:var(--green);font-size:11px;letter-spacing:.08em}
+.pick-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pick-form-team{display:flex;flex-direction:column;gap:4px;padding:8px 10px;background:rgba(255,255,255,.025);border-radius:8px}
+.pick-form-team b{font-size:12px;color:#edf4ff}
+.pick-form-sequence{font-size:13px;font-weight:700;letter-spacing:.08em;color:#45d6a0}
+.pick-form-team small,.pick-stat-note{font-size:10px;color:var(--muted)}
+.pick-stat-note{display:block;margin-top:8px;line-height:1.4}
+@media(max-width:600px){.pick-form-grid{grid-template-columns:1fr}}
+.pick-expanded{border-top:1px solid rgba(53,212,154,.35);margin-top:9px;padding:10px 4px 2px 92px;display:none}
+.pick-row.open .pick-expanded{display:block}
+.pick-expanded h4{margin:0 0 6px;color:var(--green);font-size:13px}
+.pick-expanded p{margin:0 0 8px;font-size:12px;line-height:1.5;color:#dce7f5}
+.pick-metrics{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.pick-status{font-size:10px;color:#e6c879;margin-top:6px}
+.pick-historical{margin-top:14px}
+.pick-historical h3{font-size:15px;margin:0 0 10px}
+.pick-footnote{font-size:10px;color:var(--muted);margin:8px 2px 0}
+@media(max-width:850px){.pick-row-main{grid-template-columns:64px 1fr 1.6fr 58px 94px}.pick-league{display:none}}
+@media(max-width:620px){
+ .wrap{padding:10px}
+ .pick-row{padding:10px 11px;border-radius:12px}
+ .pick-row-main{
+   display:grid;
+   grid-template-columns:minmax(0,1fr) 62px 94px;
+   grid-template-rows:auto auto auto auto;
+   align-items:center;
+   gap:8px;
+ }
+ .pick-time{grid-column:1;grid-row:1;font-size:12px;padding:0;border:0;white-space:nowrap}
+ .pick-league{
+   display:block;grid-column:1/-1;grid-row:2;
+   font-size:10px;line-height:1.2;color:#9fb2ce;
+   padding-top:6px;border-top:1px solid rgba(73,97,126,.25)
+ }
+ .pick-teams{
+   grid-column:1/-1;grid-row:3;
+   display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);
+   align-items:center;gap:7px;width:100%;min-width:0
+ }
+ .pick-side{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;min-width:0;font-size:12px;line-height:1.2}
+ .pick-side span:last-child{
+   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+   overflow:hidden;text-overflow:ellipsis;white-space:normal;overflow-wrap:anywhere;
+   max-width:100%;text-align:center
+ }
+ .pick-side:last-child{flex-direction:row}
+ .pick-crest{width:27px;height:27px;min-width:27px;font-size:8px}
+ .pick-vs-small{justify-self:center;padding:4px 5px;font-size:9px}
+ .pick-market-line{
+   grid-column:1/-1;grid-row:4;font-size:11px;line-height:1.35;
+   padding-top:7px;border-top:1px solid rgba(73,97,126,.35)
+ }
+ .pick-confidence{margin-left:5px;font-size:9px;padding:2px 5px}
+ .pick-odds{grid-column:2;grid-row:1;font-size:12px;padding:6px 4px}
+ .pick-analysis-btn{grid-column:3;grid-row:1;padding:7px 5px;font-size:11px}
+ .pick-expanded{padding:9px 2px 2px;margin-top:9px}
+ .pick-expanded h4{font-size:12px}
+ .pick-expanded p{font-size:12px}
+ .pick-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px;font-size:10px}
+ .pick-status{font-size:10px;line-height:1.4}
+ .picks-summary{align-items:flex-start}
+ .picks-summary h2{font-size:18px}
+ .picks-summary-meta{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px}
+ .picks-summary-meta button{grid-column:1/-1;width:100%}
+}
+
+
+/* Rediseño compacto: conserva proporciones y densidad de las tarjetas originales */
+.picks-summary{padding:14px 16px;background:linear-gradient(110deg,#101c30,#0d1728);border-color:#293b56}
+.picks-summary h2{font-size:19px;letter-spacing:0}
+.picks-summary p{font-size:12px}
+.pick-compact-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.pick-compact-row{width:100%;display:grid;grid-template-columns:minmax(180px,1.5fr) minmax(150px,1fr) 82px 24px;align-items:center;gap:12px;padding:9px 10px;background:transparent;color:var(--txt);border:0;border-radius:9px;text-align:left}
+.pick-compact-row:hover{background:rgba(109,168,255,.07)}
+.pick-compact-teams{display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);align-items:center;gap:7px;min-width:0}
+.pick-compact-team{display:flex;align-items:center;gap:7px;min-width:0;font-size:12px}
+.pick-compact-team b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-compact-team:last-child{justify-content:flex-end}
+.pick-compact-team .pick-feature-crest{font-style:normal;width:23px;height:23px;min-width:23px;font-size:8px}
+.pick-compact-market,.pick-compact-prob{display:flex;flex-direction:column;gap:3px;min-width:0}
+.pick-compact-market small,.pick-compact-prob small{font-size:8px;color:var(--muted);font-weight:800;letter-spacing:.06em}
+.pick-compact-market b{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-compact-prob b{font-size:13px;color:var(--green);font-variant-numeric:tabular-nums}
+.pick-compact-chevron{font-size:19px;color:var(--muted);text-align:center;transition:transform .18s}
+.pick-feature-card.open .pick-compact-chevron{transform:rotate(180deg);color:var(--green)}
+.pick-feature-card .pick-expanded{display:none;padding:9px 10px 3px;border-top:1px solid rgba(73,97,126,.25);margin-top:3px}
+.pick-feature-card.open .pick-expanded{display:block}
+.pick-detail-foot{display:flex;justify-content:space-between;gap:8px;margin:9px 0 3px;color:var(--muted);font-size:10px}
+@media(max-width:700px){.pick-compact-row{grid-template-columns:minmax(0,1fr) 74px 18px;gap:7px;padding:8px 4px}.pick-compact-market{grid-column:1;grid-row:2;padding-left:30px}.pick-compact-prob{grid-column:2;grid-row:1/3}.pick-compact-chevron{grid-column:3;grid-row:1/3}.pick-compact-teams{grid-column:1;grid-row:1}.pick-compact-team{font-size:11px}.pick-compact-team .pick-feature-crest{width:20px;height:20px;min-width:20px}.pick-feature-card .pick-expanded{padding:8px 3px 2px}.pick-feature-metrics{grid-template-columns:1fr 1fr}.pick-detail-foot{font-size:9px}}
+.pick-feature-card{background:linear-gradient(110deg,#101c30,#0d1728);border:1px solid #293b56;border-radius:13px;padding:10px 12px;margin:8px 0;box-shadow:none}
+.pick-feature-card.open{border-color:var(--green);background:linear-gradient(110deg,rgba(13,75,62,.22),#0d1728)}
+.pick-feature-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.pick-review-tag{background:rgba(53,212,154,.10);border:1px solid rgba(53,212,154,.35);color:#71dfb4;border-radius:7px;padding:3px 7px;font-size:9px;font-weight:800;letter-spacing:.04em}
+.pick-competition{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.04em}
+.pick-feature-teams{display:grid;grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);align-items:center;gap:8px;padding:9px 2px}
+.pick-feature-team{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;font-size:13px;text-align:center}
+.pick-feature-team strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pick-feature-crest{width:27px;height:27px;min-width:27px;border-radius:50%;display:grid;place-items:center;background:#203451;border:1px solid #49617e;color:#fff;font-size:9px;font-weight:900;box-shadow:none}
+.pick-feature-vs{background:#1b2b43;border:1px solid #344966;color:#a9bdd9;border-radius:7px;padding:4px 6px;font-size:10px;font-weight:800;text-align:center}
+.pick-feature-meta{display:flex;gap:7px 14px;align-items:center;flex-wrap:wrap;padding:6px 1px;border-top:1px solid rgba(73,97,126,.25);border-bottom:1px solid rgba(73,97,126,.25);color:#9fb2ce;font-size:10px}
+.pick-feature-metrics{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(70px,.8fr));gap:7px;margin:8px 0}
+.pick-feature-metric{background:rgba(5,14,27,.35);border:1px solid #293b56;border-radius:8px;padding:7px 8px;min-width:0}
+.pick-feature-metric small{display:block;color:var(--muted);font-size:9px;font-weight:750;letter-spacing:.04em;margin-bottom:3px}
+.pick-feature-metric strong{display:block;color:#eaf2ff;font-size:12px;line-height:1.25;overflow-wrap:anywhere}
+.pick-feature-metric em{display:block;margin-top:2px;color:#8198b5;font-size:9px;font-style:normal}
+.pick-feature-metric .metric-green{color:#62e2b1}
+.pick-feature-analysis{display:none;background:rgba(5,14,27,.35);border:1px solid #263b54;border-radius:9px;padding:10px 11px;margin-top:8px}
+.pick-feature-card.open .pick-feature-analysis{display:block}
+.pick-feature-analysis h3{margin:0 0 7px;color:#56dda9;font-size:11px;letter-spacing:.06em}
+.pick-feature-analysis>p{margin:0;color:#dce8f8;font-size:12px;line-height:1.5}
+.pick-feature-analysis .pick-form-grid{margin-top:9px}
+.pick-form-team{gap:3px;padding:7px 8px}
+.pick-form-team b{font-size:11px}
+.pick-form-sequence{font-size:12px}
+.pick-feature-foot{display:flex;gap:7px 14px;flex-wrap:wrap;margin-top:9px;padding-top:8px;border-top:1px solid #293c55;color:#9db1cb;font-size:10px}
+.pick-feature-foot b{color:#e3edf9}
+.pick-feature-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:7px;color:#91a7c3;font-size:10px}
+.pick-feature-actions .pick-analysis-btn{padding:6px 9px;font-size:10px}
+.pick-feature-card .pick-expanded{display:none}
+@media(max-width:760px){
+ .pick-feature-card{padding:10px 11px;border-radius:12px}
+ .picks-summary{padding:12px}
+ .pick-feature-teams{gap:5px;padding:8px 0}
+ .pick-feature-team{gap:5px;font-size:12px}
+ .pick-feature-crest{width:25px;height:25px;min-width:25px;font-size:8px}
+ .pick-feature-meta{gap:6px 10px;font-size:9px}
+ .pick-feature-metrics{grid-template-columns:1fr 1fr;gap:6px;margin:7px 0}
+ .pick-feature-metric{padding:7px}
+ .pick-feature-metric strong{font-size:12px}
+ .pick-feature-analysis{padding:9px}
+ .pick-feature-analysis>p{font-size:11px}
+ .pick-feature-foot{display:flex;gap:6px 12px;font-size:9px}
+}
+
+
+/* Escalera y Goal: tabla original con campos compactos en móvil */
+@media(max-width:700px){
+ .ladder-table{overflow-x:auto;margin:0 -8px}
+ table.ladder{display:table;width:100%;min-width:900px;table-layout:fixed;border-collapse:collapse}
+ .ladder thead{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip:auto;clip-path:none;white-space:normal;border:0}
+ .ladder tbody{display:table-row-group}
+ .ladder tr{display:table-row;padding:0;background:transparent;border:0;border-radius:0}
+ .ladder td{display:table-cell;min-width:0;padding:5px 3px;border-bottom:1px solid var(--line);font-size:10px;vertical-align:middle;overflow-wrap:normal}
+ .ladder td::before{display:none;content:none}
+ .ladder th{padding:5px 3px;font-size:9px;white-space:nowrap}
+ .ladder th:nth-child(1),.ladder td:nth-child(1){width:5%}
+ .ladder th:nth-child(2),.ladder td:nth-child(2){width:15%}
+ .ladder th:nth-child(3),.ladder td:nth-child(3){width:11%;padding-left:8px}
+ .ladder th:nth-child(4),.ladder td:nth-child(4){width:8%}
+ .ladder th:nth-child(5),.ladder td:nth-child(5){width:10%}
+ .ladder th:nth-child(6),.ladder td:nth-child(6){width:15%}
+ .ladder th:nth-child(7),.ladder td:nth-child(7){width:15%}
+ .ladder th:nth-child(8),.ladder td:nth-child(8){width:21%}
+ .ladder td:nth-child(2){padding-right:10px}
+ .ladder td:nth-child(3){padding-left:10px}
+ .ladder td:nth-child(6){padding-right:10px}
+ .ladder td:nth-child(7){padding-left:10px}
+ .ladder td input,.ladder td input.short,.ladder td input[type=date]{width:100%;min-width:0;max-width:100%;height:31px;padding:4px 5px;font-size:10px}
+ .ladder td:nth-child(6) input,.ladder td:nth-child(7) input{width:100%;min-width:0;max-width:100%}
+ .ladder td .derived-value,.ladder .money{font-size:10px}
+ .ladder .result-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;white-space:normal}
+ .ladder .result-actions button{min-width:0;padding:6px 2px;font-size:9px}
+}
+
+/* Picks > Goles: pronósticos diarios */
+.goals-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.goals-title h2{margin:0;font-size:22px}
+.goals-title p{margin:4px 0 0;font-size:12px}
+.goals-count{padding:6px 10px;border:1px solid rgba(53,212,154,.35);border-radius:9px;color:#71dfb4;font-size:11px;font-weight:800;white-space:nowrap}
+.goals-list{display:grid;gap:10px}
+.goals-pick{padding:14px 16px;background:linear-gradient(110deg,#101c30,#0d1728);border:1px solid #293b56;border-radius:12px}
+.goals-pick-meta{display:flex;justify-content:space-between;gap:10px;margin-bottom:10px;color:#9bb0cc;font-size:11px}
+.goals-match{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) minmax(100px,.8fr) auto auto;align-items:center;gap:14px}
+.goals-team{display:flex;align-items:center;gap:8px;min-width:0}
+.goals-team--away{justify-content:flex-end;text-align:right}
+.goals-team b{font-size:13px;overflow-wrap:anywhere}
+.goals-shirt{width:26px;height:28px;flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.28))}
+.goals-vs{padding:4px 7px;border:1px solid #344966;border-radius:7px;color:#a9bdd9;font-size:9px;font-weight:850}
+.goals-market{min-width:0}
+.goals-market small,.goals-prob small,.goals-odds small{display:block;color:#9bb0cc;font-size:8px;font-weight:800;letter-spacing:.08em}
+.goals-market b,.goals-prob b,.goals-odds b{display:block;margin-top:3px;font-size:12px}
+.goals-market b{color:var(--green)}
+.goals-prob b{color:var(--green)}
+.goals-summary{margin:10px 0 0;color:#b4c4d9;font-size:11px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.goals-empty-state{padding:22px;text-align:center}
+.goals-empty-state h3{margin:0 0 5px;font-size:15px}
+.goals-empty-state p{margin:0;color:var(--muted);font-size:12px}
+@media(max-width:700px){
+ .goals-title h2{font-size:19px}
+ .goals-pick{padding:12px}
+ .goals-match{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto;gap:8px}
+ .goals-team{gap:5px}
+ .goals-team b{font-size:11px}
+ .goals-shirt{width:22px;height:24px}
+ .goals-market{grid-column:1/3;grid-row:2}
+ .goals-prob{grid-column:3;grid-row:2}
+ .goals-odds{grid-column:4;grid-row:2;text-align:right}
+ .goals-market b,.goals-prob b,.goals-odds b{font-size:11px}
+ .goals-summary{margin-top:8px;font-size:10px}
+}
+
+</style></head><body>
+<div id="login" class="wrap login card"><div class="brand">FUT<span>BAT</span></div><p class="muted">Panel privado de escaleras y picks</p><h2>Iniciar sesión</h2><form id="loginForm"><label>Correo</label><input id="email" type="email" required><br><br><label>Contraseña</label><input id="password" type="password" required><br><br><button style="width:100%">Entrar</button></form><p id="error" class="muted"></p><small class="muted">Acceso privado. No hay registro público.</small></div>
+<div id="app" class="wrap hidden"><header class="head"><div><div class="brand">FUT<span>BAT</span></div><div class="muted">CONTROL CENTER · ESCALERAS DEPORTIVAS</div></div><button class="secondary" id="logout">Salir</button></header><nav class="tabs"><button class="active" data-tab="stonicx7">Escalera</button><button data-tab="eajoya7">Goal</button><button data-tab="picks">Picks</button></nav><main id="view"></main><div id="notice" class="notice hidden"></div></div>
+<script>
+const db=supabase.createClient("https://towrwojvnrjdsdvcfhtb.supabase.co","sb_publishable_XG6yddyUctVXITs7nClojQ_JfuZozPW");
+let user, ladders={}, steps=[], picks=[], dailyPicks=[], dailyHistory=[], tab="stonicx7";
+const money=n=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(+n||0);
+const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const dateLabel=d=>new Intl.DateTimeFormat("es-CO",{timeZone:"America/Bogota",day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00-05:00"));
+const eventTime=d=>new Intl.DateTimeFormat("es-CO",{timeZone:"America/Bogota",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(d));
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>Number.isFinite(+v)?+v:0;
+const notify=m=>{const el=document.querySelector("#notice");if(el){el.textContent=m;el.classList.remove("hidden");setTimeout(()=>el.classList.add("hidden"),3200)}else alert(m)};
+
+document.querySelector("#loginForm").onsubmit=async e=>{
+ e.preventDefault();
+ const errorBox=document.querySelector("#error");
+ const submit=e.currentTarget.querySelector('button[type="submit"],button:not([type])');
+ if(submit){submit.disabled=true;submit.textContent="Ingresando..."}
+ errorBox.textContent="Conectando con FutBat...";
+ try{
+  const {data,error}=await db.auth.signInWithPassword({email:document.querySelector("#email").value.trim(),password:document.querySelector("#password").value});
+  if(error){errorBox.textContent="No se pudo iniciar sesión: "+error.message;return}
+  user=data.user;
+  await boot();
+ }catch(err){
+  console.error("Error de inicio de sesión o carga:",err);
+  errorBox.textContent="Error al conectar o cargar FutBat: "+(err?.message||"Error desconocido");
+ }finally{
+  if(submit){submit.disabled=false;submit.textContent="Entrar"}
+ }
+};
+document.querySelector("#logout").onclick=async()=>{await db.auth.signOut();location.reload()};
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("active",x===b));render()});
+
+async function boot(){
+ document.querySelector("#login").classList.add("hidden");
+ document.querySelector("#app").classList.remove("hidden");
+ let {data,error}=await db.from("stonicx_ladders").select("*");
+ if(error)throw error;
+ ladders=Object.fromEntries(data.map(x=>[x.slug,x]));
+ for(let [slug,name] of [["stonicx7","StonicX7"],["eajoya7","Eajoya7"]]){
+  if(!ladders[slug]){
+   let r=await db.from("stonicx_ladders").insert({user_id:user.id,slug,display_name:name}).select().single();
+   if(r.error)throw r.error;ladders[slug]=r.data;
+  }
+ }
+ await refresh();
+ await ensureFifteenSteps();
+ await refresh();
+ render();
+}
+async function refresh(){
+ let a=await db.from("stonicx_steps").select("*").order("step_number");
+ if(a.error)throw a.error;steps=a.data;
+ let b=await db.from("stonicx_picks").select("*").order("created_at",{ascending:false});
+ if(b.error)throw b.error;picks=b.data;
+ // Pronósticos diarios, separados del historial de apuestas.
+ const d=await db.from("stonicx_daily_picks").select("*")
+  .eq("pick_date",today()).eq("published",true)
+  .in("status",["published","live","finished"]).order("event_at",{ascending:true});
+ if(d.error){console.warn("No se pudieron cargar los picks diarios:",d.error.message);dailyPicks=[]}
+ else dailyPicks=d.data||[];
+ // La evaluación histórica del modelo queda fuera de la vista Picks por ahora.
+}
+async function ensureFifteenSteps(){
+ // Create only missing rows. Existing step records are preserved.
+ for(const slug of ["stonicx7","eajoya7"]){
+  const l=ladders[slug], existing=steps.filter(x=>x.ladder_id===l.id);
+  const byNo=new Map(existing.map(x=>[Number(x.step_number),x]));
+  let priorStake=num(l.initial_stake)||10000;
+  for(let n=1;n<=15;n++){
+   const old=byNo.get(n);
+   if(old){priorStake=Math.round((num(old.stake)||priorStake)*(num(old.odds)||1.3));continue}
+   const row={user_id:user.id,ladder_id:l.id,step_number:n,bet_date:today(),stake:Math.round(priorStake),odds:1.3,event:"",market:"",result:"pending"};
+   const {data,error}=await db.from("stonicx_steps").insert(row).select().single();
+   if(error)throw error;
+   byNo.set(n,data);
+   priorStake=Math.round(num(data.stake)*num(data.odds));
+  }
+ }
+}
+function nextStake(rows,l){
+ const ordered=[...rows].sort((a,b)=>a.step_number-b.step_number);
+ let current=num(l.initial_stake)||10000;
+ for(const r of ordered){
+  if(Number(r.step_number)>15)continue;
+  current=num(r.stake)||current;
+  if(r.result==="won")current=Math.round(current*num(r.odds));
+  else if(r.result==="lost")return 0;
+  else if(r.result==="pending")return current;
+ }
+ return current;
+}
+function projectLadderRows(rows,l){
+ let previous=Number(l?.initial_stake)||10000;
+ return [...rows].sort((a,b)=>Number(a.step_number)-Number(b.step_number)).map(r=>{
+  const step=Number(r.step_number);
+  const storedStake=Number(r.stake);
+  const stake=step===1?(Number.isFinite(storedStake)?storedStake:previous):previous;
+  const odds=Number(r.odds);
+  const gain=Math.round(stake*(Number.isFinite(odds)&&odds>0?odds:1));
+  previous=gain;
+  return {...r,stake,gain};
+ });
+}
+function render(){
+ if(tab==="picks"){
+  const marketLabel=market=>{
+   const value=String(market||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[_-]+/g," ").replace(/\s+/g," ").trim();
+   if(/over\s*1[., ]5|mas de\s*1[., ]5/.test(value))return "Over 1.5 goles";
+   if(/over\s*2[., ]5|mas de\s*2[., ]5/.test(value))return "Over 2.5 goles";
+   return null;
+  };
+  const candidates=dailyPicks
+   .map(p=>({...p,displayMarket:marketLabel(p.market),prob:Number(p.probability)}))
+   .filter(p=>p.displayMarket&&Number.isFinite(p.prob)&&p.prob>=0.45&&p.prob<=1)
+   .sort((a,b)=>new Date(a.event_at)-new Date(b.event_at))
+   .slice(0,15);
+  const shirt=(color,label)=>{
+   const fill=/^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(String(color||""))?color:"#34445f";
+   return `<svg class="goals-shirt" role="img" aria-label="Camiseta de ${esc(label)}" viewBox="0 0 32 32"><path d="M10 4 4 7 1.5 13l5 2 2-3v16h15V12l2 3 5-2L28 7l-6-3-4 3h-4z" fill="${fill}" stroke="#a8c2df" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+  };
+  const rows=candidates.map((p,i)=>{
+   const home=p.home_name||p.event||"Equipo local",away=p.away_name||"Equipo visitante";
+   const time=eventTime(p.event_at),probability=(p.prob*100).toFixed(1)+"%";
+   const fairOdds=1/p.prob,inside=fairOdds>=1.20&&fairOdds<=1.80;
+   const analysis=String(p.analysis||p.summary||"El modelo no devolvió un resumen adicional para este pronóstico.").trim();
+   const stats=p.stats&&typeof p.stats==="object"?p.stats:{};
+   const details=[
+    stats.home_form?("Forma local: "+stats.home_form):"",
+    stats.away_form?("Forma visitante: "+stats.away_form):"",
+    stats.sample_size?("Muestra: "+stats.sample_size):"",
+    stats.data_source?("Fuente: "+stats.data_source):""
+   ].filter(Boolean);
+   return `<article class="goals-pick">
+    <div class="goals-pick-meta"><span>${esc(p.league||"Competición no disponible")} · ${esc(time)} COT</span><span>${esc(dateLabel(String(p.event_at||"").slice(0,10)))}</span></div>
+    <div class="goals-match">
+     <span class="goals-team">${shirt(p.home_color,home)}<b>${esc(home)}</b></span><span class="goals-vs">VS</span>
+     <span class="goals-team goals-team--away">${shirt(p.away_color,away)}<b>${esc(away)}</b></span>
+     <span class="goals-market"><small>MERCADO</small><b>${esc(p.displayMarket)}</b></span>
+     <span class="goals-prob"><small>PROB. ESTIMADA</small><b>${probability}</b></span>
+     <span class="goals-odds"><small>CUOTA JUSTA</small><b>${fairOdds.toFixed(2)}</b></span>
+    </div>
+    <div class="goals-summary">${esc(analysis)}</div>
+    <div class="pick-detail-foot"><span>Cuota real: <b>por confirmar manualmente</b></span><span class="${inside?"metric-green":"pick-status"}">${inside?"Cuota justa dentro":"Cuota justa fuera"} del rango 1.20–1.80</span></div>
+    ${details.length?`<div class="pick-footnote">${details.map(esc).join(" · ")}</div>`:""}
+   </article>`;
+  }).join("");
+  view.innerHTML=`
+   <section class="card goals-title"><div><p class="goals-kicker">FÚTBOL · MODELO DIARIO</p><h2>Picks del día</h2><p class="muted">Solo Over 1.5 y Over 2.5 · prob. mínima 45% · hora Colombia</p></div><span class="goals-count">${candidates.length} / 15 picks</span></section>
+   ${candidates.length?`<section class="goals-list" aria-label="Pronósticos diarios">${rows}</section>`:`<section class="card goals-empty-state"><h3>Sin pronósticos que cumplan el umbral</h3><p>Se mostrarán candidatos con probabilidad estimada igual o superior al 45% y datos disponibles. No se rellenan cupos artificialmente.</p></section>`}
+   <p class="pick-footnote">La cuota justa es teórica (1 ÷ probabilidad), no es una cuota de casa de apuestas. Confirma manualmente la cuota real antes de decidir; el rango objetivo es 1.20–1.80. La probabilidad es una estimación, no una garantía.</p>`;
+  return;
+ }
+ const l=ladders[tab],storedRows=steps.filter(x=>x.ladder_id===l.id&&Number(x.step_number)<=15).sort((a,b)=>a.step_number-b.step_number);
+ const rows=projectLadderRows(storedRows,l);
+ const profit=rows.reduce((v,x)=>v+(x.result==="won"?x.gain-x.stake:x.result==="lost"?-x.stake:0),0);
+ const balance=num(l.starting_bank)+profit,pct=Math.max(0,Math.min(100,balance/(num(l.target_bank)||1)*100));
+ const won=rows.filter(x=>x.result==="won").length,lost=rows.filter(x=>x.result==="lost").length;
+ const next=rows.find(x=>x.result==="pending");
+ const nextText=next?`Siguiente: paso ${next.step_number} · apuesta ${money(next.stake)} a cuota ${num(next.odds).toFixed(2)}`:
+  (lost?"Escalera detenida: hay un paso perdido.":"Escalera completada.");
+ view.innerHTML=`
+ <div class="grid">
+  <div class="card stat"><small>Saldo actual</small><strong>${money(balance)}</strong></div>
+  <div class="card stat"><small>Banca inicial</small><strong>${money(l.starting_bank)}</strong></div>
+  <div class="card stat"><small>Meta</small><strong>${money(l.target_bank)}</strong></div>
+  <div class="card stat"><small>Pasos ganados</small><strong>${won} / 15</strong></div>
+ </div>
+ <section class="card">
+  <div class="head"><h3>Progreso</h3><b>${pct.toFixed(1)}%</b></div>
+  <div class="bar"><div style="width:${pct}%"></div></div>
+  <p class="muted">Resultado neto: ${money(profit)} · Ganados: ${won} · Perdidos: ${lost}</p>
+  <button class="secondary" onclick="config()">Editar banca y meta</button>
+ </section>
+ <section class="card next-step"><strong>${esc(nextText)}</strong><p class="muted">Marca cada resultado y el saldo se actualiza automáticamente.</p></section>
+ <section class="card">
+  <div class="head"><h3>Escalera de 15 pasos</h3><span class="muted">Valor 1 editable; los siguientes se calculan al acertar.</span></div>
+  <div class="table ladder-table">${ladderTable(rows)}</div>
+ </section>
+ <div id="notice" class="notice hidden"></div>`;
+}
+function ladderTable(rows){
+ return `<table class="ladder"><thead><tr><th>Paso</th><th>Fecha</th><th>Valor</th><th>Cuota</th><th>Ganancia</th><th>Evento</th><th>Apuesta</th><th>Resultado</th></tr></thead><tbody>
+ ${rows.map(r=>{
+  const result=r.result||"pending",gain=r.gain;
+  return `<tr class="${result==="won"?"row-won":result==="lost"?"row-lost":""}">
+   <td><b>${r.step_number}</b></td>
+   <td><input aria-label="Fecha paso ${r.step_number}" type="date" value="${esc(r.bet_date||"")}" onchange="saveStep('${r.id}','bet_date',this.value)"></td>
+   <td>${Number(r.step_number)===1?`<input class="short" aria-label="Valor inicial punto 1" type="number" min="0" step="100" value="${num(r.stake)}" onchange="saveStep('${r.id}','stake',this.value)">`:`<span class="money derived-value" aria-label="Valor calculado punto ${r.step_number}">${money(r.stake)}</span>`}</td>
+   <td><input class="short"  aria-label="Cuota paso ${r.step_number}" type="number" min="1" step="0.01" value="${num(r.odds).toFixed(2)}" onchange="saveStep('${r.id}','odds',this.value)"></td>
+   <td class="money">${money(gain)}</td>
+   <td><input aria-label="Evento paso ${r.step_number}" value="${esc(r.event)}" placeholder="Evento" onchange="saveStep('${r.id}','event',this.value)"></td>
+   <td><input aria-label="Apuesta paso ${r.step_number}" value="${esc(r.market)}" placeholder="Mercado / selección" onchange="saveStep('${r.id}','market',this.value)"></td>
+   <td><div class="result-actions">
+    <button class="${result==="won"?"btn-won":"secondary"}" onclick="setResult('${r.id}','won')">Ganó</button>
+    <button class="${result==="lost"?"btn-lost":"secondary"}" onclick="setResult('${r.id}','lost')">Perdió</button>
+    <button class="${result==="pending"?"btn-pending":"secondary"}" title="Dejar pendiente" onclick="setResult('${r.id}','pending')">Pend.</button>
+   </div></td>
+  </tr>`;
+ }).join("")}
+ </tbody></table>`;
+}
+async function saveStep(id,field,value){
+ const row=steps.find(x=>x.id===id);
+ if(field==="stake"&&Number(row?.step_number)!==1){notify("Solo se puede editar el valor inicial del punto 1.");return}
+ const allowed={bet_date:value=>value,event:value=>value,market:value=>value,odds:value=>Math.max(1,num(value)),stake:value=>Math.max(0,num(value))};
+ if(!allowed[field])return;
+ const payload={[field]:allowed[field](value)};
+ const {error}=await db.from("stonicx_steps").update(payload).eq("id",id);
+ if(error){notify("Error al guardar: "+error.message);return}
+ await refresh();render();notify("Paso actualizado.");
+}
+async function setResult(id,result){
+ const {error}=await db.from("stonicx_steps").update({result}).eq("id",id);
+ if(error){notify("Error al guardar resultado: "+error.message);return}
+ await refresh();render();notify("Resultado guardado y saldo recalculado.");
+}
+async function config(){
+ const l=ladders[tab],s=prompt("Banca inicial COP",l.starting_bank);if(s===null)return;
+ const t=prompt("Meta COP",l.target_bank);if(t===null)return;
+ const q=prompt("Apuesta base COP",l.initial_stake);if(q===null)return;
+ const {data,error}=await db.from("stonicx_ladders").update({starting_bank:+s,target_bank:+t,initial_stake:+q}).eq("id",l.id).select().single();
+ if(error)return alert(error.message);
+ ladders[tab]=data;await refresh();render();
+}
+function table(rows,isPick){
+ return `<table><thead><tr><th>Fecha</th>${isPick?'<th>Casa</th>':''}<th>Evento</th><th>Mercado</th><th>Cuota</th><th>Stake</th><th>Resultado</th><th></th></tr></thead><tbody>${rows.length?rows.map(r=>`<tr><td>${r.bet_date||r.pick_date||"—"}</td>${isPick?`<td>${esc(r.bookmaker)}</td>`:""}<td>${esc(r.event)}</td><td>${esc(r.market)}</td><td>${r.odds}</td><td>${money(r.stake)}</td><td>${esc(r.result)}</td><td><button class="secondary" onclick="${isPick?`editPick('${r.id}')`:`editStep('${r.id}')`}">Editar</button></td></tr>`).join(""):`<tr><td colspan="8" class="muted">Sin registros todavía.</td></tr>`}</tbody></table>`;
+}
+function togglePickAnalysis(id){
+ const row=document.getElementById("pick-"+id);
+ if(!row)return;
+ const wasOpen=row.classList.contains("open");
+ document.querySelectorAll(".pick-feature-card.open").forEach(x=>x.classList.remove("open"));
+ if(!wasOpen)row.classList.add("open");
+}
+
+async function addPick(){
+ let r={user_id:user.id,pick_date:today(),bookmaker:prompt("Casa","Betano")||"",event:prompt("Evento","")||"",market:prompt("Mercado","")||"",odds:+(prompt("Cuota","1.5")||1.5),stake:+(prompt("Stake COP","10000")||10000),result:"pending"};
+ let x=await db.from("stonicx_picks").insert(r);if(x.error)return alert(x.error.message);await refresh();render();
+}
+async function editPick(id){
+ let r=picks.find(x=>x.id===id),result=prompt("pending / won / lost / void",r.result);if(result===null)return;
+ let x=await db.from("stonicx_picks").update({result}).eq("id",id);if(x.error)return alert(x.error.message);await refresh();render();
+}
+db.auth.getSession().then(async({data})=>{if(data.session){user=data.session.user;try{await boot()}catch(e){alert(e.message)}}});
+</script></body></html>
