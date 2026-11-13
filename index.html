@@ -78,7 +78,7 @@ table.ladder{min-width:1120px}
 .pick-status{font-size:10px;color:#e6c879;margin-top:6px}
 .pick-historical{margin-top:14px}
 .pick-historical h3{font-size:15px;margin:0 0 10px}
-.pick-footnote{font-size:10px;color:var(--muted);margin:8px 2px 0}
+.api-prediction-item{padding:12px;border:1px solid var(--line);border-radius:10px;margin:8px 0;background:#0c1426}.api-prediction-item p{margin:5px 0;line-height:1.45}.api-prediction-top{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.api-prediction-advice{color:#dce7fa;font-weight:700}.api-prediction-state{font-size:12px;color:var(--muted)}.api-prediction-percent{font-size:12px}.api-prediction-section .head{align-items:flex-start}.api-prediction-section button:disabled{opacity:.65;cursor:wait}.pick-footnote{font-size:10px;color:var(--muted);margin:8px 2px 0}
 @media(max-width:850px){.pick-row-main{grid-template-columns:64px 1fr 1.6fr 58px 94px}.pick-league{display:none}}
 @media(max-width:620px){
  .wrap{padding:10px}
@@ -268,7 +268,7 @@ table.ladder{min-width:1120px}
 <div id="app" class="wrap hidden"><header class="head"><div><div class="brand">PRONOS<span>TIPS</span></div><div class="muted">CONTROL CENTER · PRONÓSTICOS DEPORTIVOS</div></div><button class="secondary" id="logout">Salir</button></header><nav class="tabs"><button class="active" data-tab="stonicx7">Escalera</button><button data-tab="eajoya7">Goal</button><button data-tab="picks">Picks</button></nav><main id="view"></main><div id="notice" class="notice hidden"></div></div>
 <script>
 const db=supabase.createClient("https://yeotlkttevxtnhjbvryf.supabase.co","sb_publishable_ZKlo08el_lEoDq4erX99jg_13TomqZq");
-let user, ladders={}, steps=[], picks=[], dailyPicks=[], dailyHistory=[], tab="stonicx7";
+let user, ladders={}, steps=[], picks=[], dailyPicks=[], apiPredictions=[], apiPredictionsLoaded=false, apiPredictionsLoading=false, apiPredictionsError="", apiPredictionNotice="", dailyHistory=[], tab="stonicx7";
 const money=n=>new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:0}).format(+n||0);
 const today=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 const dateLabel=d=>new Intl.DateTimeFormat("es-CO",{timeZone:"America/Bogota",day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00-05:00"));
@@ -326,7 +326,28 @@ async function refresh(){
   .in("status",["published","live","finished"]).order("event_at",{ascending:true});
  if(d.error){console.warn("No se pudieron cargar los picks diarios:",d.error.message);dailyPicks=[]}
  else dailyPicks=d.data||[];
+ const original=await db.from("pronostips_predictions").select("*").eq("match_date",today()).order("kickoff_at",{ascending:true});
+ apiPredictionsLoaded=true;
+ if(original.error){apiPredictions=[];apiPredictionsError=original.error.message}
+ else{apiPredictions=original.data||[];apiPredictionsError=""}
  // La evaluación histórica del modelo queda fuera de la vista Picks por ahora.
+}
+async function loadApiFootballPredictions(){
+ if(apiPredictionsLoading)return;
+ apiPredictionsLoading=true;apiPredictionsError="";apiPredictionNotice="Consultando API-Football…";render();
+ try{
+  const {data,error}=await db.functions.invoke("pronostips-predictions",{body:{}});
+  if(error)throw error;
+  if(!data||!data.ok)throw new Error(data?.error||"No se pudo completar la consulta.");
+  apiPredictionNotice="Guardadas "+(Number(data.predictions_saved)||0)+" predicciones; "+(Number(data.api_calls)||0)+" solicitudes en esta consulta, "+(Number(data.requests_used_today)||0)+" de 100 usadas hoy."+(data.truncated?" Quedan partidos para una próxima consulta.":"");
+  if(Array.isArray(data.warnings)&&data.warnings.length)apiPredictionNotice+=" Algunos partidos tuvieron errores.";
+  await refresh();
+ }catch(error){
+  apiPredictionsError=String(error?.message||"Error de conexión");
+  apiPredictionNotice="";
+ }finally{
+  apiPredictionsLoading=false;render();
+ }
 }
 async function ensureFifteenSteps(){
  // Create only missing rows. Existing step records are preserved.
@@ -412,8 +433,18 @@ function render(){
     ${details.length?`<div class="pick-footnote">${details.map(esc).join(" · ")}</div>`:""}
    </article>`;
   }).join("");
+  const originalRows=apiPredictions.map(p=>{
+   const percent=p.percent&&typeof p.percent==="object"?p.percent:{};
+   const goals=p.goals&&typeof p.goals==="object"?p.goals:{};
+   const percentage=Object.entries(percent).filter(([,v])=>v!=null).map(([k,v])=>(k==="home"?p.home_team:k==="away"?p.away_team:"Empate")+": "+v).join(" · ");
+   const goalLine=Object.entries(goals).filter(([,v])=>v!=null).map(([k,v])=>(k==="home"?p.home_team:k==="away"?p.away_team:k)+": "+v).join(" · ");
+   return '<article class="api-prediction-item"><div class="api-prediction-top"><span>'+esc(p.league_name||"Fútbol")+'</span><span>'+esc(eventTime(p.kickoff_at))+' COT</span></div><p><b>'+esc(p.home_team)+'</b> vs <b>'+esc(p.away_team)+'</b></p>'+(p.advice?'<p class="api-prediction-advice">Consejo original: '+esc(p.advice)+'</p>':'')+(p.winner&&p.winner.name?'<p>Favorito API-Football: '+esc(p.winner.name)+'</p>':'')+(percentage?'<p class="api-prediction-percent">Probabilidades originales (local / empate / visitante): '+esc(percent.home||"—")+' / '+esc(percent.draw||"—")+' / '+esc(percent.away||"—")+'</p>':'')+(goalLine?'<p class="api-prediction-percent">Líneas de goles originales: '+esc(goalLine)+'</p>':'')+(p.fetch_status==="error"?'<p class="api-prediction-state">'+esc(p.fetch_error||"Error al consultar API-Football.")+'</p>':(!p.prediction_available?'<p class="api-prediction-state">API-Football no devolvió predicción para este partido.</p>':''))+'</article>';
+  }).join("");
+  const originalState=!apiPredictionsLoaded?'<p class="api-prediction-state">Cargando predicciones guardadas…</p>':apiPredictionsError?'<p class="api-prediction-state">No se pudieron cargar las predicciones. '+esc(apiPredictionsError)+'</p>':originalRows?'':'<p class="api-prediction-state">Todavía no hay predicciones guardadas para hoy.</p>';
+  const apiPanel='<section class="card api-prediction-section"><div class="head"><div><h3>Consejos originales de API-Football</h3><p class="muted">Se consultan por partido y se guardan para mostrarlos aquí.</p></div><button type="button" onclick="loadApiFootballPredictions()" '+(apiPredictionsLoading?"disabled":"")+'>'+(apiPredictionsLoading?'Consultando…':'Consultar')+'</button></div><p class="api-prediction-state">Límite gratuito compartido: 100 solicitudes al día; se procesan hasta 25 partidos por consulta.</p>'+(apiPredictionNotice?'<p class="api-prediction-state" aria-live="polite">'+esc(apiPredictionNotice)+'</p>':'')+originalState+originalRows+'</section>';
   view.innerHTML=`
    <section class="card goals-title"><div><p class="goals-kicker">FÚTBOL · MODELO DIARIO</p><h2>Picks del día</h2><p class="muted">Solo Over 1.5 y Over 2.5 · prob. mínima 45% · hora Colombia</p></div><span class="goals-count">${candidates.length} / 15 picks</span></section>
+   ${apiPanel}
    ${candidates.length?`<section class="goals-list" aria-label="Pronósticos diarios">${rows}</section>`:`<section class="card goals-empty-state"><h3>Sin pronósticos que cumplan el umbral</h3><p>Se mostrarán candidatos con probabilidad estimada igual o superior al 45% y datos disponibles. No se rellenan cupos artificialmente.</p></section>`}
    <p class="pick-footnote">La cuota justa es teórica (1 ÷ probabilidad), no es una cuota de casa de apuestas. Confirma manualmente la cuota real antes de decidir; el rango objetivo es 1.20–1.80. La probabilidad es una estimación, no una garantía.</p>`;
   return;
@@ -511,3 +542,4 @@ async function editPick(id){
 }
 db.auth.getSession().then(async({data})=>{if(data.session){user=data.session.user;try{await boot()}catch(e){alert(e.message)}}});
 </script></body></html>
+
